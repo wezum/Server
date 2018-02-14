@@ -35,7 +35,7 @@ export class Player {
             b = Buffer.concat([ bufferLength, new Buffer([type])]);
         }
 
-        console.log("buffer size:"+ (dataBuffer.length+1))
+        console.log(type.toString() + " - buffer size:"+ (dataBuffer.length+1))
         this.socket.write(b); 
     } 
 }
