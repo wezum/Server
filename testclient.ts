@@ -1,7 +1,5 @@
 import * as net from 'net';
 
-
-
 //let b :Array<Uint8Array>= [1,2,3];
 let bb = Buffer.concat([new Buffer([2]), new Buffer("hello")]);
 

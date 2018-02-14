@@ -1,76 +1,60 @@
 import * as net from 'net';
 import './messageType';
-import { ClientMessageType, OnReciveData } from './messageType';
+import { ClientMessageType, OnReciveData, ServerMessageType } from './messageType';
 import { Player } from "./Player";
-import { Room } from './room';
+import { Room, RoomManager } from './room';
 import { Lobby } from './Lobby';
+import { QuickArray } from './QuickArray';
 
+// main player array tha contains all tha players connected to the server 
+export class CoolServer{
+  static players = new QuickArray<Player>();
 
-var stdin = process.openStdin();
-var clients = Array<Player>();
+  static startServer(){
+    const server = net.createServer((client: net.Socket) => {
+      // adding the player to the main player array
+      let player = new Player(client);
+      player.id = this.players.add(player);
+    
+      //Auto add to lobby
+      Lobby.addPlayer(player);
+    
+      console.log("new connection with id " + player.id + " - total connections: " + this.players.length);
+      
+      client.on('end', () => this.disconnect(player));
+    
+      client.on("data", (data) => OnReciveData[data[0]](data.slice(1), player));
+    
+      client.on("error", (err) => {
+        console.log(err);
+        let code = err["code"];
+        if(code && code == "ECONNRESET") this.disconnect(player);
+      });
+    });
+    
+    server.listen(8124, () => {
+      console.log('running server...');
+    });
 
-const server = net.createServer((c: net.Socket) => {
-  // 'connection' listener
-  let player = new Player(c);
-  clients.push(player);
+    this.listenForInputs();
+  }
 
-  //Auto add to lobby
-  Lobby.addPlayer(player);
-  Lobby.update();
-
-  console.log("someone connected " + clients.length);
-
-  
-  c.on('end', () => {
-    disconnect(c);
-  });
-
-
-  c.on("data", (data) => 
-  {
-    dataRouter(data, player);
-  });
- 
-  stdin.addListener("data",d =>{
-      c.write("WESAM:"+d.toString());
-  })
-
-  c.on("error", (err) => {
-    let code = err["code"];
-    console.log(err);
-    if(code){
-      switch(code){
-        case "EPIPE":
-        break;
-        case "ECONNRESET":
-        disconnect(c);
-        break;
-
-      }
-    }
-  });
-
-});
-
-server.listen(8124, () => {
-  console.log('server bound');
-});
-
-function dataRouter(data: Buffer , client: Player ) {
-  OnReciveData[data[0]](data.slice(1) , client );
-}
-
-function broadCast(c: Player, data: Buffer) {
-  clients.forEach(a=>{
-    if(a!==c){
-      //a.SendMessage( data);
-      }
+  static listenForInputs(){
+    process.openStdin().addListener("data", d =>{
+      this.players.forEach(player => {
+        player.sendMessage(ServerMessageType.ServerEcho, d.toString());
+      });
     })
+  }
+
+  static disconnect(player: Player){
+    RoomManager.leaveRoom(player, true);
+
+    Lobby.removePlayer(player);
+    this.players.remove(player.id);
+  
+    console.log('client disconnected with id ' + player.id);
+  }
 }
 
-function disconnect (socket:net.Socket){
-  var clientIndex = clients.findIndex(a=>a.socket===socket);
-  Lobby.players.splice(Lobby.players.findIndex(a => a.socket === socket), 1);
-  console.log('client disconnected');
-  clients.splice(clientIndex,1);
-}
+CoolServer.startServer();

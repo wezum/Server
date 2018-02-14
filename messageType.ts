@@ -3,15 +3,17 @@ import { Socket } from "net";
 import { Player } from "./Player";
 
 //message type for switching system codes
-
 export enum ServerMessageType{
     RoomCreated,
     RoomExists,
     RoomLeft,
     PlayerInRoom,
     UpdateRoomList,
+    AddOrEditToRoomList,
+    RemoveFromRoomList,
     RoomJoined,
     RPC,
+    ServerEcho,
     SIZE
 }
 

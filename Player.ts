@@ -4,25 +4,27 @@ import { ServerMessageType } from "./messageType";
 import { Lobby } from "./Lobby";
 
 export class Player {
-    inRoom = false;
-    roomName = "";
+    id: number;
+    room: Room;
     playerData: any;
 
     constructor(public socket: Socket){}
 
-    leaveRoom() {
-        Lobby.addPlayer(this);
-        this.inRoom = false;
-        this.roomName = "";
+    leaveRoom(disconnected?: boolean) {
+        if(!disconnected){
+            Lobby.addPlayer(this);
+        }
+
+        this.room = null;
     }
     
     joinRoom(room: Room) {
         Lobby.removePlayer(this);
-        this.inRoom = true;
-        this.roomName = room.name;
+
+        this.room = room;
     }
 
-    SendMessage(type: ServerMessageType, data?:any) {
+    sendMessage(type: ServerMessageType, data?:any) {
         let b: Buffer;
         let dataBuffer = new Buffer(data ? data : 0);
         let bufferLength= new Buffer(new Uint16Array([dataBuffer.length + 1]).buffer)

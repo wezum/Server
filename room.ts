@@ -4,32 +4,32 @@ import { Lobby } from "./Lobby";
 import { RoomInfo } from "./RoomInfo";
 
 export class Room {
-    players: Player[];
+    players: Player[] = [];
     info: RoomInfo;
+    infoId: number;
 
-    constructor(public name: string) {
-        this.players = [];
-    }
+    constructor(public name: string) { }
 
     update(){
         this.info = new RoomInfo(this.name, this.players.length, "");
-        Lobby.roomData[Lobby.roomData.findIndex(d => d.n === this.info.n)] = this.info;
-        Lobby.update();
+        Lobby.roomData[this.infoId] = this.info;
+        Lobby.update(this.info);
     }
 
     static addRoom(key: string, value: Room){
         RoomManager.rooms.set(key, value);
         value.info = new RoomInfo(key, 1, "");
-        Lobby.roomData.push(value.info);
+        value.infoId = Lobby.roomData.add(value.info);
 
-        Lobby.update();
+        Lobby.update(value.info);
     }
 
-    static removeRoom(key: string){
-        RoomManager.rooms.delete(key);
-        Lobby.roomData.splice(Lobby.roomData.findIndex(r => r.n === key), 1);
+    static removeRoom(room: Room){
+        const name: string = room.name;
+        RoomManager.rooms.delete(room.name);
+        Lobby.roomData.remove(room.infoId);
 
-        Lobby.update();
+        Lobby.update(name, true);
     }
 }
 
@@ -41,15 +41,15 @@ export class RoomManager{
         {
             console.log("room already exists");
             // send failed
-            client.SendMessage(ServerMessageType.RoomExists); 
+            client.sendMessage(ServerMessageType.RoomExists); 
             return false;
         }
 
-        if(client.inRoom){
+        if(client.room){
             
             console.log("player already in room");
             // send failed
-            client.SendMessage(ServerMessageType.PlayerInRoom); 
+            client.sendMessage(ServerMessageType.PlayerInRoom); 
             return false;
         }
         
@@ -66,15 +66,15 @@ export class RoomManager{
         console.log("=====================")
 
         // send successful
-        client.SendMessage(ServerMessageType.RoomCreated); 
+        client.sendMessage(ServerMessageType.RoomCreated); 
 
         return true;
     }
 
     static joinRoom(client:Player,roomName:string){
         
-        if(client.inRoom){
-            console.log("Failed to join room")
+        if(client.room){
+            console.log("client is already in a room")
             return;
         }
         const room = this.rooms.get(roomName);
@@ -91,23 +91,23 @@ export class RoomManager{
         })
 
         room.update();
-        client.SendMessage(ServerMessageType.RoomJoined);
+        client.sendMessage(ServerMessageType.RoomJoined);
         
     }
 
-    static leaveRoom(client: Player):boolean{
-        if(!client.inRoom){
-            
+    static leaveRoom(client: Player, disconnected?: boolean):boolean{
+        if(!client.room){
             return false;
         }
 
-        const n = client.roomName;
-        this.rooms.get(client.roomName).players.forEach(p => {
-            p.leaveRoom();
-        });
-        Room.removeRoom(n);
+        const r = client.room;
+        client.leaveRoom(disconnected);
+        Room.removeRoom(r);
         
-        client.SendMessage(ServerMessageType.RoomLeft);
+        if(!disconnected){
+            client.sendMessage(ServerMessageType.RoomLeft);
+            Lobby.addPlayer(client);
+        }
         return true;
     }
 }
