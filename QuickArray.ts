@@ -3,8 +3,11 @@ export class QuickArray<T>{
     array: Array<T> = [];
     // points to the empty elements in the array
     private pointer: Array<number> = [];
+
+    // length of the array excluding the null items
+    length: number = 0;
     
-    get length(): number{
+    private get actualLength(): number{
         return this.array.length;
     }
 
@@ -18,6 +21,8 @@ export class QuickArray<T>{
 
     // Adds the element to any free spot in the array and returns the index (should be saved)
     add(element: T): number{
+        this.length++;
+        
         const pointer = this.getPointer();
         if(pointer){
             this.array[pointer] = element;
@@ -30,6 +35,12 @@ export class QuickArray<T>{
 
     // frees the element spot so it can be used in future and without shifting the array
     remove(id: number){
+        if(id >= this.array.length) {
+            console.log("can't remove element index out of range");
+            return;
+        }
+
+        this.length--;
         this.array[id] = null;
 
         this.pointer.push(id);

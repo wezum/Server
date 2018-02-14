@@ -9,7 +9,6 @@ export enum ServerMessageType{
     RoomLeft,
     PlayerInRoom,
     UpdateRoomList,
-    AddOrEditToRoomList,
     RemoveFromRoomList,
     RoomJoined,
     RPC,

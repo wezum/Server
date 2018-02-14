@@ -30,7 +30,7 @@ export class Lobby {
             if(remove){
                 player.sendMessage(ServerMessageType.RemoveFromRoomList, updatedElement);
             }else{
-                player.sendMessage(ServerMessageType.AddOrEditToRoomList, element);
+                player.sendMessage(ServerMessageType.UpdateRoomList, element);
             }
         });
     }
